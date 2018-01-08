@@ -1,5 +1,6 @@
 #!/bin/bash
 
+# IP adress or network name your Yamaha receiver
 ampli_ip="rx-v575"
 
 showhelp () {
