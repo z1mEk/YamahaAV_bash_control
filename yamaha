@@ -1,0 +1,121 @@
+#!/bin/bash
+
+ampli_ip="rx-v575"
+
+showhelp () {
+    echo
+    echo "Yamaha av receiver control"
+    echo
+    echo "  yamaha command param|value"
+    echo "  comands:"
+    echo "    volup or +, voldown or -"
+    echo "    volume, vol $val (eg. -325 to -32,5 dB)"
+    echo "    mute On|Off"
+    echo "    bass -60 to 60, treble -60 to 60 (eg. -45 to -4,5 dB)"
+    echo "    source AUDIO|TUNER|USB|spotify|NET RADIO|SERVER|AirPlay|..."
+    echo "    power On|Standby"
+    echo "    enhancer On|Off, adrc On|Auto"
+    echo "    play, start, stop, pause, prev, next"
+    echo "    search-, search+, skip-, skip+"
+    echo "    scene $val"
+    echo "    FM, AM"
+    echo "    0 to 9"
+    echo "    +10, ENT"
+    echo "    up, down, left, right"
+    echo "    enter, return"
+    echo "    level"
+    echo "    on screen"
+    echo "    option"
+    echo "    top menu"
+    echo "    pop up menu"
+    echo "    sendkey #code"
+    echo "    sendxml <xml>"
+    echo "    SetLineList source $line_number"
+    echo "    GetSysConfig"
+    echo "    GetVolumeInfo"
+    echo "    GetBasicStatus"
+    echo "    GetListInfo"
+    echo "    GetPlayInfo"
+    echo
+}
+
+sendxml () {
+    local xml=$1
+    local size=${#xml}
+    local header="POST /YamahaRemoteControl/ctrl HTTP/1.0\\nUser-Agent: bash script\\nHost: $ampli_ip\\nContent-Type: text/xml\\nContent-length: $size\\n\\n"
+    ret=`echo -e $header$xml | nc $ampli_ip 80`
+    indx=`expr index "$ret" "<"`
+    echo "<${ret:$indx}"
+}
+
+send () {
+    local xml="<?xml version=\"1.0\" encoding=\"UTF-8\"?><YAMAHA_AV cmd=\"PUT\">$1</YAMAHA_AV>"
+    sendxml "$xml"
+}
+
+sendkey () {
+    send "<System><Misc><Remote_Signal><Receive><Code>$1</Code></Receive></Remote_Signal></Misc></System>"
+}
+
+case $1 in
+     "volup") send "<Main_Zone><Volume><Lvl><Val>Up 1 dB</Val><Exp></Exp><Unit></Unit></Lvl></Volume></Main_Zone>" ;;
+     "voldown") send "<Main_Zone><Volume><Lvl><Val>Down 1 dB</Val><Exp></Exp><Unit></Unit></Lvl></Volume></Main_Zone>" ;;
+     "vol") send "<Main_Zone><Volume><Lvl><Val>$2</Val><Exp>1</Exp><Unit>dB</Unit></Lvl></Volume></Main_Zone>" ;;
+     "volume") send "<Main_Zone><Volume><Lvl><Val>$2</Val><Exp>1</Exp><Unit>dB</Unit></Lvl></Volume></Main_Zone>" ;;
+     "+") send "<Main_Zone><Volume><Lvl><Val>Up 1 dB</Val><Exp></Exp><Unit></Unit></Lvl></Volume></Main_Zone>" ;;
+     "-") send "<Main_Zone><Volume><Lvl><Val>Down 1 dB</Val><Exp></Exp><Unit></Unit></Lvl></Volume></Main_Zone>" ;;
+     "mute") send "<Main_Zone><Volume><Mute>$2</Mute></Volume></Main_Zone>" ;;
+     "bass") send "<Main_Zone><Sound_Video><Tone><Bass><Val>$2</Val><Exp>1</Exp><Unit>dB</Unit></Bass></Tone></Sound_Video></Main_Zone>" ;;
+     "treble") send "<Main_Zone><Sound_Video><Tone><Treble><Val>$2</Val><Exp>1</Exp><Unit>dB</Unit></Treble></Tone></Sound_Video></Main_Zone>" ;;
+     "source") send "<Main_Zone><Input><Input_Sel>$2</Input_Sel></Input></Main_Zone>" ;;
+     "power") send "<Main_Zone><Power_Control><Power>$2</Power></Power_Control></Main_Zone>" ;;
+     "enhancer") send "<Main_Zone><Surround><Program_Sel><Current><Enhancer>$2</Enhancer></Current></Program_Sel></Surround></Main_Zone>" ;;
+     "adrc") send "<Main_Zone><Sound_Video><Adaptive_DRC>$2</Adaptive_DRC></Sound_Video></Main_Zone>" ;;
+     "scene") send "<Main_Zone><Scene><Scene_Sel>Scene $2</Scene_Sel></Scene></Main_Zone>" ;;
+     # remote key code
+     "play") sendkey "7F016897" ;;
+     "start") sendkey "7F016897" ;;
+     "stop") sendkey "7F016996" ;;
+     "pause") sendkey "7F016798" ;;
+     "search-") sendkey "7F016A95" ;;
+     "search+") sendkey "7F016E94" ;;
+     "skip-") sendkey "7F016C93" ;;
+     "skip+") sendkey "7F016D92" ;;
+     "prev") sendkey "7F016C93" ;;
+     "next") sendkey "7F016D92" ;;
+     "FM") sendkey "7F015827" ;;
+     "AM") sendkey "7F01552A" ;;
+     "1") sendkey "7F0151AE" ;;
+     "2") sendkey "7F0152AD" ;;
+     "3") sendkey "7F0153AC" ;;
+     "4") sendkey "7F0154AB" ;;
+     "5") sendkey "7F0155AA" ;;
+     "6") sendkey "7F0156A9" ;;
+     "7") sendkey "7F0157A8" ;;
+     "8") sendkey "7F0158A7" ;;
+     "9") sendkey "7F0159A6" ;;
+     "0") sendkey "7F015AA5" ;;
+     "+10") sendkey "7F015BA4" ;;
+     "ENT") sendkey "7F015CA3" ;;
+     "up")  sendkey "7A859D62" ;;
+     "down") sendkey "7A859C63" ;;
+     "left") sendkey "7A859F60" ;;
+     "right") sendkey "7A859E61" ;;
+     "enter") sendkey "7A85DE21" ;;
+     "return") sendkey "7A85AA55" ;;
+     "level") sendkey "7A858679" ;;
+     "on screen") sendkey "7A85847B" ;;
+     "option") sendkey "7A856B14" ;;
+     "top menu") sendkey "7A85A0DF" ;;
+     "pop up menu") sendkey "7A85A4DB" ;;
+     "sendkey") sendkey "$2" ;;
+     "sendxml") sendxml "$2" ;;
+     "SetLineList") sendxml "<?xml version=\"1.0\" encoding=\"utf-8\"?><YAMAHA_AV cmd=\"PUT\"><$2><List_Control><Direct_Sel>Line_$3</Direct_Sel></List_Control></$2></YAMAHA_AV>" ;;
+     "GetSysConfig") sendxml "<?xml version=\"1.0\" encoding=\"utf-8\"?><YAMAHA_AV cmd=\"GET\"><System><Config>GetParam</Config></System></YAMAHA_AV>" ;;
+     "GetVolumeInfo") sendxml "<?xml version=\"1.0\" encoding=\"utf-8\"?><YAMAHA_AV cmd=\"GET\"><Main_Zone><Volume><Lvl>GetParam</Lvl></Volume></Main_Zone></YAMAHA_AV>" ;;
+     "GetBasicStatus") sendxml "<?xml version=\"1.0\" encoding=\"utf-8\"?><YAMAHA_AV cmd=\"GET\"><Main_Zone><Basic_Status>GetParam</Basic_Status></Main_Zone></YAMAHA_AV>" ;;
+     "GetListInfo") sendxml "<?xml version=\"1.0\" encoding=\"utf-8\"?><YAMAHA_AV cmd=\"GET\"><$2><List_Info>GetParam</List_Info></$2></YAMAHA_AV>" ;;
+     "GetPlayInfo") sendxml "<?xml version=\"1.0\" encoding=\"utf-8\"?><YAMAHA_AV cmd=\"GET\"><$2><Play_Info>GetParam</Play_Info></$2></YAMAHA_AV>" ;;
+     *) showhelp ;;
+esac
+
