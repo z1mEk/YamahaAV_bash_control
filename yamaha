@@ -2,11 +2,13 @@
 
 # author: z1mEk
 # e-mail: gabriel.zima@wp.pl
-# version: 1.0
+# version: 1.1
 # date: 2018-01-08
+# update: 2018-11-09
 
 # IP adress or network name your Yamaha receiver
 ampli_ip="rx-v575"
+ampli_port=80
 
 showhelp () {
     echo
@@ -49,9 +51,9 @@ sendxml () {
     local xml=$1
     local size=${#xml}
     local header="POST /YamahaRemoteControl/ctrl HTTP/1.0\\nUser-Agent: bash script\\nHost: $ampli_ip\\nContent-Type: text/xml\\nContent-length: $size\\n\\n"
-    ret=`echo -e $header$xml | nc $ampli_ip 80`
-    indx=`expr index "$ret" "<"`
-    echo "<${ret:$indx}"
+    ret=`echo -e $header$xml | nc $ampli_ip $ampli_port`
+    status=$(echo $ret | grep -oPm1 "(?<=<YAMAHA_AV rsp=\"PUT\" RC=\")[^\"]+")
+    echo "{'status':'$status'}"
 }
 
 send () {
